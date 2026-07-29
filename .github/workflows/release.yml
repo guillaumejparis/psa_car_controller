@@ -7,6 +7,8 @@ on:
 jobs:
   create_release:
     name: Build wheel package
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     steps:
      - uses: actions/checkout@v6
