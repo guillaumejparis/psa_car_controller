@@ -1,4 +1,4 @@
-name: Publish Docker image and pypi package
+name: Publish Docker image
 on:
   push:
     tags:
@@ -6,7 +6,9 @@ on:
   workflow_dispatch:
 jobs:
   create_release:
-    name: Push to pypi
+    name: Build wheel package
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     steps:
      - uses: actions/checkout@v6
@@ -19,12 +21,11 @@ jobs:
          python -m pip install --upgrade pip
          pip install poetry
          sudo apt-get install libblas3 liblapack3 liblapack-dev libblas-dev gfortran libatlas-base-dev
-     - name: Build and publish
+     - name: Build wheel
        run: |
          export PSACC_VERSION=$(git describe --tags --abbrev=0)
          poetry version ${PSACC_VERSION}
          poetry build
-         poetry publish --username __token__ --password ${{ secrets.PYPI_TOKEN }}
          mv dist/psa_car_controller-${PSACC_VERSION:1}-py3-none-any.whl dist/psa_car_controller-0.0.0-py3-none-any.whl
      - uses: actions/upload-artifact@v4
        with:
@@ -88,7 +89,7 @@ jobs:
     needs: push_to_registry
     name: Update psacc-ha version
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') && !contains(github.ref, 'b')
+    if: github.repository == 'guillaumejparis/psa_car_controller' && github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') && !contains(github.ref, 'b')
     steps:
       - uses: actions/checkout@v6
       - uses: ./.github/actions/update-ha-config
@@ -102,7 +103,7 @@ jobs:
     needs: push_to_registry
     name: Update psacc-ha beta version
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') && contains(github.ref, 'b')
+    if: github.repository == 'guillaumejparis/psa_car_controller' && github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') && contains(github.ref, 'b')
     steps:
       - uses: actions/checkout@v6
       - uses: ./.github/actions/update-ha-config
