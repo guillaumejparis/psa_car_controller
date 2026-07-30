@@ -112,7 +112,9 @@ class PSAClient:
                         return res
                 except (ApiException, HTTPError) as ex:
                     logger.error("get_vehicle_info: ApiException: %s", ex, exc_info_debug=True)
-            car.status = res
+            # Keep last known good status if the live fetch failed.
+            if res is not None:
+                car.status = res
         return res
 
     def __refresh_vehicle_info(self):

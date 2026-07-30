@@ -36,6 +36,12 @@ def get_control_tabs(config):
         myp: PSAClient = config.myp
         el = []
         buttons_row = []
+        if car.status is None:
+            # Try one live refresh so the control tab is not empty after a transient cache miss.
+            try:
+                car.status = myp.get_vehicle_info(car.vin, cache=False)
+            except Exception:  # pylint: disable=broad-except
+                logger.exception("failed to refresh vehicle status for control tab")
         if car.status is not None:
             cards = OrderedDict({"Battery SOC": {"text": [card_value_div("battery_value", "%",
                                                                          value=convert_value_to_str(
@@ -73,6 +79,9 @@ def get_control_tabs(config):
                                                myp.remote_client.preconditioning, preconditionning_state).get_html()])
                 except (AttributeError, TypeError):
                     logger.exception("get_control_tabs:")
+        else:
+            el.append(dbc.Alert("Vehicle status unavailable. Try refresh or check API/auth connectivity.",
+                                color="warning"))
         if not config.offline:
             buttons_row.append(Switch(ABRP_SWITCH, car.vin, "Send data to ABRP", myp.abrp.enable_abrp,
                                       car.vin in config.myp.abrp.abrp_enable_vin).get_html())
