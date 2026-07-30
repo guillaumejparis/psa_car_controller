@@ -99,8 +99,11 @@ class PSAClient:
     def get_vehicle_info(self, vin, cache=False):
         res = None
         car = self.vehicles_list.get_car_by_vin(vin)
+        if car is None:
+            logger.error("get_vehicle_info: unknown VIN %s", vin)
+            return None
         if cache and car.status is not None:
-            res = car.status
+            return car.status
         else:
             for _ in range(0, 2):
                 try:
@@ -112,10 +115,7 @@ class PSAClient:
                         return res
                 except (ApiException, HTTPError) as ex:
                     logger.error("get_vehicle_info: ApiException: %s", ex, exc_info_debug=True)
-            # Keep last known good status if the live fetch failed.
-            if res is not None:
-                car.status = res
-        return res
+            return car.status
 
     def __refresh_vehicle_info(self):
         if self.info_refresh_rate is not None:

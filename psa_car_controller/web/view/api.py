@@ -43,12 +43,18 @@ def get_vehicules():
 
 @app.route('/get_vehicleinfo/<string:vin>')
 def get_vehicle_info(vin):
-    from_cache = int(request.args.get('from_cache', 0)) == 1
+    from_cache = request.args.get('from_cache', '0').lower() in ('1', 'true', 'yes')
+    if APP.myp.vehicles_list.get_car_by_vin(vin) is None:
+        return jsonify({'error': 'vehicle not found'}), 404
+    status = APP.myp.get_vehicle_info(vin, from_cache)
+    if status is None:
+        return jsonify({'error': 'vehicle status unavailable'}), 503
     response = app.response_class(
-        response=json.dumps(APP.myp.get_vehicle_info(vin, from_cache).to_dict(), default=str),
+        response=json.dumps(status.to_dict(), default=str),
         status=200,
         mimetype='application/json'
     )
+    response.headers['Cache-Control'] = 'no-store'
     return response
 
 
